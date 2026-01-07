@@ -1,0 +1,12 @@
+Program
+|- Function-Item
+   |- name: main
+   |- parameters: [],
+   |- body: Block
+            |- Let-Stmt
+               |- identifier: x
+               |- value: Int-Expression
+                         |- value: 1
+            |- Return-Stmt
+               |- value: Int-Expression
+                         |- value: 0
