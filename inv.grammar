@@ -1,0 +1,49 @@
+Program ::= Item *
+Item ::=
+    | Function
+Function ::= "fn" , Identifier , LParen , Arguments , RParen , Block
+Identifier ::= string
+Arguments ::= ( Identifier , ( "," , Identifier ) ) *
+Block ::= "{" , Statement * , "}"
+Statement ::=
+    | Block
+    | Binding
+    | Expression
+    | Return
+    | If
+    | While
+Binding ::= "let" , Identifier , "=" , Expression , ";"
+Expression ::=
+    | Int
+    | Boolean
+    | Reference
+    | Operation
+    | Assignment
+    | Call
+Return ::= "return" , Expression , ";"
+If ::= ?
+While ::= "while" , Statement , Block
+Int ::= int
+Boolean ::= boolean
+Reference ::= Identifier
+Operation ::=
+    | BinaryOperation
+    | UnaryOperation
+BinaryOperation ::=
+    | Add
+    | Sub
+    | Mul
+    | Div
+    | Equal
+    | NotEqual
+    | Less
+    | LessEqual
+    | Greater
+    | GreaterEqual
+    | And
+    | Or
+UnaryOperation ::=
+    | Not
+Not ::= "!" , Expression
+Assignment ::= Identifier , "=" , Expression
+Call ::= Identifier , "(" , Arguments , ")", ";"
