@@ -10,10 +10,11 @@ Statement ::=
     | Binding
     | Expression
     | Return
-    | If
+    | Branch
     | While
 Binding ::= "let" , Identifier , "=" , Expression , ";"
 Expression ::=
+    | "(" , Expression , ")"
     | Int
     | Boolean
     | Reference
@@ -21,8 +22,8 @@ Expression ::=
     | Assignment
     | Call
 Return ::= "return" , Expression , ";"
-If ::= ?
-While ::= "while" , Statement , Block
+Branch ::= "if" , Expression , Block , ( "else" , Block )?
+While ::= "while" , Expression , Block
 Int ::= int
 Boolean ::= boolean
 Reference ::= Identifier
@@ -42,6 +43,18 @@ BinaryOperation ::=
     | GreaterEqual
     | And
     | Or
+Add ::= Expression , "+" , Expression
+Sub ::= Expression , "-" , Expression
+Mul ::= Expression , "*" , Expression
+Div ::= Expression , "*" , Expression
+Equal ::= Expression , "==" , Expression
+NotEqual ::= Expression , "!=" , Expression
+Less ::= Expression , "<" , Expression
+LessEqual ::= Expression , "<=" , Expression
+Greater ::= Expression , ">" , Expression
+GreaterEqual ::= Expression , ">=" , Expression
+And ::= Expression , "&&" , Expression
+Or ::= Expression , "||" , Expression
 UnaryOperation ::=
     | Not
 Not ::= "!" , Expression
