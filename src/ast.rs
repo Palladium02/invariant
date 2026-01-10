@@ -7,7 +7,7 @@ pub enum Statement {
     Binding(String, Expression),
     Expression(Expression),
     Return(Expression),
-    If(Expression, Box<Statement>),
+    Branch(Expression, Box<Statement>, Option<Box<Statement>>),
     While(Expression, Box<Statement>),
 }
 
