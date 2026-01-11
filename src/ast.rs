@@ -1,5 +1,15 @@
 use std::range::Range;
 
+pub struct Program {
+    items: Vec<Item>,
+}
+
+impl Program {
+    pub fn new(items: Vec<Item>) -> Self {
+        Self { items }
+    }
+}
+
 pub enum Item {
     Function {
         name: String,
