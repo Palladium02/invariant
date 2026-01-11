@@ -112,4 +112,11 @@ impl Token {
             Token::UnexpectedCharacter(_) => TokenKind::UnexpectedCharacter,
         }
     }
+
+    pub fn as_identifier_unchecked(self) -> String {
+        match self {
+            Token::Identifier(identifier) => identifier,
+            _ => unreachable!(),
+        }
+    }
 }
