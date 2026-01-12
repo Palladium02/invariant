@@ -1,6 +1,7 @@
 use crate::ast::{Item, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenKind};
+use crate::traits::RangeExt;
 use std::iter::Peekable;
 use std::range::Range;
 
@@ -75,7 +76,7 @@ impl<'t> Parser<'t> {
         if let Some((Token::RBrace, end)) = self.input.peek() {
             return Ok(Statement::Block {
                 body: Vec::new(),
-                span: Range::from(start.start..end.end),
+                span: start.merge(&end),
             });
         }
 
@@ -96,7 +97,7 @@ impl<'t> Parser<'t> {
 
         Ok(Statement::Block {
             body: statements,
-            span: Range::from(start.start..end.end),
+            span: start.merge(&end),
         })
     }
 
