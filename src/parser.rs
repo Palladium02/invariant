@@ -1,4 +1,4 @@
-use crate::ast::{Item, Program, Statement};
+use crate::ast::{Expression, Item, Program, Statement};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenKind};
 use crate::traits::RangeExt;
@@ -113,18 +113,74 @@ impl<'t> Parser<'t> {
     }
 
     fn expect_binding(&mut self) -> Result<Statement, ParseError> {
-        todo!()
+        let (_, start) = self.expect_token(TokenKind::Let)?;
+        let (name, _) = self.expect_identifier()?;
+        let _ = self.expect_token(TokenKind::Equal)?;
+        let value = self.expect_expression()?;
+        let (_, end) = self.expect_token(TokenKind::Semicolon)?;
+
+        Ok(Statement::Binding {
+            bind_to: name,
+            value,
+            span: start.merge(&end),
+        })
     }
 
     fn expect_return(&mut self) -> Result<Statement, ParseError> {
-        todo!()
+        let (_, start) = self.expect_token(TokenKind::Return)?;
+        let value = self.expect_expression()?;
+        let (_, end) = self.expect_token(TokenKind::Semicolon)?;
+
+        Ok(Statement::Return {
+            value,
+            span: start.merge(&end),
+        })
     }
 
     fn expect_branching(&mut self) -> Result<Statement, ParseError> {
-        todo!()
+        let (_, start) = self.expect_token(TokenKind::If)?;
+        let condition = self.expect_expression()?;
+        let then = self.expect_block()?;
+
+        if let Some((Token::Else, _)) = self.input.peek() {
+            self.input.next();
+            let otherwise = self.expect_block()?;
+
+            let end = otherwise.span();
+
+            return Ok(Statement::Branch {
+                condition,
+                then: Box::new(then),
+                otherwise: Some(Box::new(otherwise)),
+                span: start.merge(&end),
+            });
+        }
+
+        let end = then.span();
+
+        Ok(Statement::Branch {
+            condition,
+            then: Box::new(then),
+            otherwise: None,
+            span: start.merge(&end),
+        })
     }
 
     fn expect_while(&mut self) -> Result<Statement, ParseError> {
+        let (_, start) = self.expect_token(TokenKind::While)?;
+        let condition = self.expect_expression()?;
+        let body = self.expect_block()?;
+
+        let end = body.span();
+
+        Ok(Statement::While {
+            condition,
+            body: Box::new(body),
+            span: start.merge(&end),
+        })
+    }
+
+    fn expect_expression(&mut self) -> Result<Expression, ParseError> {
         todo!()
     }
 
