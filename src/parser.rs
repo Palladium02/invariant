@@ -7,8 +7,14 @@ use std::range::Range;
 
 pub enum ParseError {
     UndefinedFailure,
-    UnexpectedToken(Token, Range<usize>),
-    UnexpectedEof(TokenKind),
+    UnexpectedToken(Token, Range<usize>, Option<ExpectedTokenKind>),
+    UnexpectedEof(ExpectedTokenKind),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum ExpectedTokenKind {
+    This(TokenKind),
+    AnyOf(Vec<TokenKind>),
 }
 
 pub(crate) struct Parser<'t> {
@@ -35,8 +41,10 @@ impl<'t> Parser<'t> {
     fn expect_item(&mut self) -> Result<Item, ParseError> {
         match self.input.peek() {
             Some((Token::Fn, _)) => self.expect_function(),
-            Some((token, span)) => Err(ParseError::UnexpectedToken(token.clone(), *span)),
-            None => Err(ParseError::UnexpectedEof(TokenKind::Fn)),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(token.clone(), *span, None)),
+            None => Err(ParseError::UnexpectedEof(ExpectedTokenKind::This(
+                TokenKind::Fn,
+            ))),
         }
     }
 
@@ -91,8 +99,18 @@ impl<'t> Parser<'t> {
         // eat unconsumed Token::RBrace
         let end = match self.input.next() {
             Some((Token::RBrace, span)) => span,
-            Some((token, span)) => return Err(ParseError::UnexpectedToken(token, span)),
-            None => return Err(ParseError::UnexpectedEof(TokenKind::RBrace)),
+            Some((token, span)) => {
+                return Err(ParseError::UnexpectedToken(
+                    token,
+                    span,
+                    Some(ExpectedTokenKind::This(TokenKind::RBrace)),
+                ));
+            }
+            None => {
+                return Err(ParseError::UnexpectedEof(ExpectedTokenKind::This(
+                    TokenKind::RBrace,
+                )));
+            }
         };
 
         Ok(Statement::Block {
@@ -102,15 +120,27 @@ impl<'t> Parser<'t> {
     }
 
     fn expect_statement(&mut self) -> Result<Statement, ParseError> {
+        let expected_token_kinds = vec![
+            TokenKind::LBrace,
+            TokenKind::Let,
+            TokenKind::Return,
+            TokenKind::If,
+            TokenKind::While,
+        ];
         match self.input.peek() {
             Some((Token::LBrace, _)) => self.expect_block(),
             Some((Token::Let, _)) => self.expect_binding(),
             Some((Token::Return, _)) => self.expect_return(),
             Some((Token::If, _)) => self.expect_branching(),
             Some((Token::While, _)) => self.expect_while(),
-            Some((token, span)) => Err(ParseError::UnexpectedToken(token.clone(), *span)),
-            // Using LBrace here though technically any of the above matched tokens would be correct
-            None => Err(ParseError::UnexpectedEof(TokenKind::LBrace)),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(
+                token.clone(),
+                *span,
+                Some(ExpectedTokenKind::AnyOf(expected_token_kinds)),
+            )),
+            None => Err(ParseError::UnexpectedEof(ExpectedTokenKind::AnyOf(
+                expected_token_kinds,
+            ))),
         }
     }
 
@@ -189,16 +219,26 @@ impl<'t> Parser<'t> {
     fn expect_identifier(&mut self) -> Result<(String, Range<usize>), ParseError> {
         match self.input.next() {
             Some((Token::Identifier(identifier), span)) => Ok((identifier, span)),
-            Some((token, span)) => Err(ParseError::UnexpectedToken(token, span)),
-            None => Err(ParseError::UnexpectedEof(TokenKind::Identifier)),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(
+                token,
+                span,
+                Some(ExpectedTokenKind::This(TokenKind::Identifier)),
+            )),
+            None => Err(ParseError::UnexpectedEof(ExpectedTokenKind::This(
+                TokenKind::Identifier,
+            ))),
         }
     }
 
     fn expect_token(&mut self, kind: TokenKind) -> Result<(Token, Range<usize>), ParseError> {
         match self.input.next() {
             Some((token, span)) if token.kind() == kind => Ok((token, span)),
-            Some((token, span)) => Err(ParseError::UnexpectedToken(token, span)),
-            None => Err(ParseError::UndefinedFailure),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(
+                token,
+                span,
+                Some(ExpectedTokenKind::This(kind)),
+            )),
+            None => Err(ParseError::UnexpectedEof(ExpectedTokenKind::This(kind))),
         }
     }
 
