@@ -50,6 +50,32 @@ pub enum Statement {
     },
 }
 
+impl Statement {
+    pub fn span(&self) -> Range<usize> {
+        *match self {
+            Statement::Block { body, span } => span,
+            Statement::Binding {
+                bind_to,
+                value,
+                span,
+            } => span,
+            Statement::Expression { expression, span } => span,
+            Statement::Return { value, span } => span,
+            Statement::Branch {
+                condition,
+                then,
+                otherwise,
+                span,
+            } => span,
+            Statement::While {
+                condition,
+                body,
+                span,
+            } => span,
+        }
+    }
+}
+
 pub enum Expression {
     Integer {
         value: i64,
