@@ -7,6 +7,8 @@ use std::range::Range;
 
 pub enum ParseError {
     UndefinedFailure,
+    UnexpectedToken(Token, Range<usize>),
+    UnexpectedEof(TokenKind),
 }
 
 pub(crate) struct Parser<'t> {
@@ -24,10 +26,7 @@ impl<'t> Parser<'t> {
         let mut items = Vec::new();
 
         while !self.is_eof() {
-            items.push(
-                self.expect_item()
-                    .map_err(|_| ParseError::UndefinedFailure)?,
-            );
+            items.push(self.expect_item()?);
         }
 
         Ok(Program::new(items))
@@ -36,8 +35,8 @@ impl<'t> Parser<'t> {
     fn expect_item(&mut self) -> Result<Item, ParseError> {
         match self.input.peek() {
             Some((Token::Fn, _)) => self.expect_function(),
-            Some(_) => todo!(),
-            None => todo!(),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(token.clone(), *span)),
+            None => Err(ParseError::UnexpectedEof(TokenKind::Fn)),
         }
     }
 
@@ -92,7 +91,8 @@ impl<'t> Parser<'t> {
         // eat unconsumed Token::RBrace
         let end = match self.input.next() {
             Some((Token::RBrace, span)) => span,
-            _ => return Err(ParseError::UndefinedFailure),
+            Some((token, span)) => return Err(ParseError::UnexpectedToken(token, span)),
+            None => return Err(ParseError::UnexpectedEof(TokenKind::RBrace)),
         };
 
         Ok(Statement::Block {
@@ -108,7 +108,9 @@ impl<'t> Parser<'t> {
             Some((Token::Return, _)) => self.expect_return(),
             Some((Token::If, _)) => self.expect_branching(),
             Some((Token::While, _)) => self.expect_while(),
-            _ => Err(ParseError::UndefinedFailure),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(token.clone(), *span)),
+            // Using LBrace here though technically any of the above matched tokens would be correct
+            None => Err(ParseError::UnexpectedEof(TokenKind::LBrace)),
         }
     }
 
@@ -187,14 +189,15 @@ impl<'t> Parser<'t> {
     fn expect_identifier(&mut self) -> Result<(String, Range<usize>), ParseError> {
         match self.input.next() {
             Some((Token::Identifier(identifier), span)) => Ok((identifier, span)),
-            _ => Err(ParseError::UndefinedFailure),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(token, span)),
+            None => Err(ParseError::UnexpectedEof(TokenKind::Identifier)),
         }
     }
 
     fn expect_token(&mut self, kind: TokenKind) -> Result<(Token, Range<usize>), ParseError> {
         match self.input.next() {
             Some((token, span)) if token.kind() == kind => Ok((token, span)),
-            Some((token, span)) => Err(ParseError::UndefinedFailure),
+            Some((token, span)) => Err(ParseError::UnexpectedToken(token, span)),
             None => Err(ParseError::UndefinedFailure),
         }
     }
