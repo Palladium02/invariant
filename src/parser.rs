@@ -148,7 +148,7 @@ impl<'t> Parser<'t> {
         let (_, start) = self.expect_token(TokenKind::Let)?;
         let (name, _) = self.expect_identifier()?;
         let _ = self.expect_token(TokenKind::Equal)?;
-        let value = self.expect_expression()?;
+        let value = self.expect_expression(0)?;
         let (_, end) = self.expect_token(TokenKind::Semicolon)?;
 
         Ok(Statement::Binding {
@@ -160,7 +160,7 @@ impl<'t> Parser<'t> {
 
     fn expect_return(&mut self) -> Result<Statement, ParseError> {
         let (_, start) = self.expect_token(TokenKind::Return)?;
-        let value = self.expect_expression()?;
+        let value = self.expect_expression(0)?;
         let (_, end) = self.expect_token(TokenKind::Semicolon)?;
 
         Ok(Statement::Return {
@@ -171,7 +171,7 @@ impl<'t> Parser<'t> {
 
     fn expect_branching(&mut self) -> Result<Statement, ParseError> {
         let (_, start) = self.expect_token(TokenKind::If)?;
-        let condition = self.expect_expression()?;
+        let condition = self.expect_expression(0)?;
         let then = self.expect_block()?;
 
         if let Some((Token::Else, _)) = self.input.peek() {
@@ -200,7 +200,7 @@ impl<'t> Parser<'t> {
 
     fn expect_while(&mut self) -> Result<Statement, ParseError> {
         let (_, start) = self.expect_token(TokenKind::While)?;
-        let condition = self.expect_expression()?;
+        let condition = self.expect_expression(0)?;
         let body = self.expect_block()?;
 
         let end = body.span();
@@ -212,7 +212,21 @@ impl<'t> Parser<'t> {
         })
     }
 
-    fn expect_expression(&mut self) -> Result<Expression, ParseError> {
+    fn expect_expression(&mut self, rbp: u8) -> Result<Expression, ParseError> {
+        let mut left = self.expect_nud()?;
+        while let Some((token, _)) = self.input.peek()
+            && Parser::binding_power(token.kind()) > rbp
+        {
+            left = self.expect_lud(left)?;
+        }
+        Ok(left)
+    }
+
+    fn expect_nud(&mut self) -> Result<Expression, ParseError> {
+        todo!()
+    }
+
+    fn expect_lud(&mut self, left: Expression) -> Result<Expression, ParseError> {
         todo!()
     }
 
@@ -248,5 +262,9 @@ impl<'t> Parser<'t> {
         } else {
             false
         }
+    }
+
+    fn binding_power(kind: TokenKind) -> u8 {
+        todo!()
     }
 }
